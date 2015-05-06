@@ -45,47 +45,57 @@ png.close
 message = "Screenshot from #{ENV['USER']} at #{Time.now}"
 room_name = room_id = nil
 
-if mac
+def_room_name = conf['rooms'].first.first
+
+single_question = "Upload screenshot to #{def_room_name}?"
+multi_prompt    = 'Upload screenshot to which room?'
+
+room_name = if mac
   require 'shellwords'
   require 'open3'
 
   system("screencapture -i #{png.path.shellescape} 2>/dev/null") || exit(1)
 
-  def_room_name = conf['rooms'].first.first
-
   oscript = if conf['rooms'].size > 1 
     <<-EOF
       tell application "System Events"
         activate
-        set room to choose from list {#{conf['rooms'].keys.map{|k| %{"#{k}"}}.join(',')}} with prompt "Upload screenshot to which room?" with title "HipChat Screenshot" default items {"#{def_room_name}"}
+        set room to choose from list {#{conf['rooms'].keys.map{|k| %{"#{k}"}}.join(',')}} with prompt "#{multi_prompt}" with title "HipChat Screenshot" default items {"#{def_room_name}"}
       end tell
     EOF
   else
     <<-EOF
       tell application "System Events"
         activate
-        set question to display dialog "Upload screenshot to #{def_room_name}?" with title "HipChat Screenshot" buttons {"Cancel", "OK"} cancel button "Cancel" default button "OK"
+        set question to display dialog "#{single_question}" with title "HipChat Screenshot" buttons {"Cancel", "OK"} cancel button "Cancel" default button "OK"
       end tell
     EOF
   end
 
   out, = Open3.capture2e('osascript', stdin_data: oscript)
   out.chomp!
-  room_name = out == 'button returned:OK' ? def_room_name : out
-  room_id = conf['rooms'][room_name]
-
-  exit(1) unless room_id
+  out == 'button returned:OK' ? def_room_name : out
 else
-  system('gnome-screenshot', '--area', '--file', png.path) || exit(1)
-
-  raise 'room selector for zenity not ready yet'
-
   # FIXME: should use something like this to determine if you have a prompter
   # available: https://github.com/vertiginous/pik/blob/master/lib/pik/which.rb
-  if File.exists? '/usr/bin/zenity'
-    system('zenity', '--question', '--text', 'Post screenshot?') || exit(1)
+  raise 'requires zenity' unless File.exists? '/usr/bin/zenity'
+
+  system('gnome-screenshot', '--area', '--file', png.path) || exit(1)
+
+  if conf['rooms'].size > 1
+    raise 'zenity multi-room support not ready yet'
+    tf = 'TRUE'
+    system('zenity', '--list', "--title=#{multi_prompt}", '--radiolist',
+           '--column', 'Room Name',
+           *conf['rooms'].keys.map {|n| r=[tf, n] ; tf = 'FALSE' ; r }.flatten)
+  else
+    system('zenity', '--question', '--text', single_question) || exit(1)
+    def_room_name
   end
 end
+
+room_id = conf['rooms'][room_name]
+exit(1) unless room_id
 
 client = HipChat::Client.new(conf['api_token'], api_version: 'v2')
 client[room_id].send_file(conf['username'], '', File.open(png.path))
