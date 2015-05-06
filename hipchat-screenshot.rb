@@ -26,6 +26,7 @@ unless File.exists?(conf_file)
     'username' => 'FIXME: Your HipChat username',
   }
   File.open(conf_file, 'w') {|f| f.write skeleton.to_yaml }
+  File.chmod(0600, conf_file)
   $stderr.puts "Skeleton #{conf_file} created; edit then re-run"
   exit(1)
 end
