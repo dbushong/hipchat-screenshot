@@ -5,6 +5,7 @@ require 'tempfile'
 require 'hipchat'
 require 'rbconfig'
 require 'yaml'
+require 'open3'
 
 prog = File.basename($0)
 opts = OptionParser.new
@@ -83,14 +84,11 @@ else
   system('gnome-screenshot', '--area', '--file', png.path) || exit(1)
 
   if conf['rooms'].size > 1
-    raise 'zenity multi-room support not ready yet'
-    tf = 'TRUE'
-    system('zenity', '--list', "--title=#{multi_prompt}", '--radiolist',
-           '--column', 'Room Name',
-           *conf['rooms'].keys.map {|n| r=[tf, n] ; tf = 'FALSE' ; r }.flatten)
+    out, = Open3.capture2('zenity', '--list', "--title=#{multi_prompt}",
+                          '--column', 'Room Name', *conf['rooms'].keys)
+    (out || '').gsub(/\|.*|\n/, '')
   else
-    system('zenity', '--question', '--text', single_question) || exit(1)
-    def_room_name
+    system('zenity', '--question', '--text', single_question) && def_room_name
   end
 end
 
