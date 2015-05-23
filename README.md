@@ -30,3 +30,10 @@ In `~/.hipchat-screenshot.yml` you may configure:
 * Go to the "Keyboard Shortcuts" section of the "Keyboard" preferences pane
 * Choose "Services" on the left and scroll to the bottom to find "Hipchat Screenshot"
 * Double-click on the area on the right and press the keys for something sufficiently unique but memorable; I like "Command-Control-Shift-4" (which requires unchecking the "Copy picture of selected area to clipboard" shortcut under "Screen Shots" on the left; but I never used that anyway)
+
+#### Gnome Desktop ####
+
+* Open System Settings > Keyboard > Shortcuts
+* Choose "Custom Shortcuts" from the left
+* Click [+] call it "Hipchat Screenshot" or something, put `/path/to/hipchat-screenshot` as the Command
+* Click the entry, and press the keys for something unique but memorable; I like "Ctrl-Shift-PrintScreen" (which requires clearing out one of the entries in the Screenshots on the left, but I never used that anyway)
